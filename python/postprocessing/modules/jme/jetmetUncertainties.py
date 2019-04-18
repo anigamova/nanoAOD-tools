@@ -55,6 +55,15 @@ class jetmetUncertaintiesProducer(Module):
         self.lenVar = "n" + self.jetBranchName
         # To do : change to real values
         self.jmsVals = [1.00, 0.99, 1.01]
+        # Scale for m_softdrop
+        self.jmsSDVals = [1.00, 1.00, 1.00]
+        if era == '2016':
+            self.jmsSDVals = [1.00, 0.9906, 1.0094]
+            #self.jmrSDVals = [1.00, 0.8 , 1.2]
+        else:
+        # To do : change to real values
+            self.jmsSDVals = [1.00, 0.99, 1.01]
+            #self.jmrSDVals = [0.1, 0.2, 0.0]
         
 
         # read jet energy scale (JES) uncertainties
@@ -302,6 +311,11 @@ class jetmetUncertaintiesProducer(Module):
                 jet_msdcorr_jmsDown = []
                 jet_msdcorr_jesUp   = {}
                 jet_msdcorr_jesDown = {}
+
+                #msoftdrop scale systematics
+                jmsNomVal = self.jmsSDVals[0]
+                jmsDownVal = self.jmsSDVals[1]
+                jmsUpVal = self.jmsSDVals[2]
                 
                 ( jet_msdcorr_jmrNomVal, jet_msdcorr_jmrUpVal, jet_msdcorr_jmrDownVal ) = self.jetSmearer.getSmearValsM(groomedP4, genGroomedJet) if groomedP4 != None and genGroomedJet != None else (0.,0.,0.)
                 jet_msdcorr_raw = groomedP4.M() if groomedP4 != None else 0.0
@@ -462,6 +476,7 @@ jetmetUncertainties2018AK4PuppiAll = lambda : jetmetUncertaintiesProducer("2018"
 jetmetUncertainties2016AK8Puppi = lambda : jetmetUncertaintiesProducer("2016", "Summer16_23Sep2016V4_MC", [ "Total" ], jetType="AK8PFPuppi")
 jetmetUncertainties2016AK8PuppiAll = lambda : jetmetUncertaintiesProducer("2016", "Summer16_23Sep2016V4_MC",  [ "All" ], jetType="AK8PFPuppi")
 jetmetUncertainties2016AK8PuppiNoGroom = lambda : jetmetUncertaintiesProducer("2016", "Summer16_23Sep2016V4_MC", [ "Total" ], jetType="AK8PFPuppi",redoJEC=False,noGroom=True)
+jetmetUncertainties2016AK8PuppiTotal = lambda: jetmetUncertaintiesProducer("2016", "Summer16_23Sep2016V4_MC", [ "Total" ],jetType="AK8PFPuppi",redoJEC=False,noGroom=False)
 jetmetUncertainties2016AK8PuppiAllNoGroom = lambda : jetmetUncertaintiesProducer("2016", "Summer16_23Sep2016V4_MC", ["All"], jetType="AK8PFPuppi",redoJEC=False,noGroom=True)
 
 jetmetUncertainties2017AK8Puppi = lambda : jetmetUncertaintiesProducer("2017", "Fall17_17Nov2017_V32_MC", [ "Total" ], jetType="AK8PFPuppi")
