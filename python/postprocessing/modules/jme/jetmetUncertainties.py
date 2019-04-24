@@ -401,13 +401,13 @@ class jetmetUncertaintiesProducer(Module):
                 jets_mass_jesUp  [jesUncertainty].append(jet_mass_jesUp[jesUncertainty])
                 jets_mass_jesDown[jesUncertainty].append(jet_mass_jesDown[jesUncertainty])
                 if self.doGroomed :
-                    jet_msdcorr_jesUp = jet_msdcorr_tau21DDT_nom*(1. + delta)
-                    jet_msdcorr_jesDown = jet_msdcorr_tau21DDT_nom*(1. - delta)
+                    jet_msdcorr_jesUp = jet_msdcorr_nom*(1. + delta)
+                    jet_msdcorr_jesDown = jet_msdcorr_nom*(1. - delta)
                     jets_msdcorr_jesUp  [jesUncertainty].append(jet_msdcorr_jesUp)
                     jets_msdcorr_jesDown[jesUncertainty].append(jet_msdcorr_jesDown)                    
                     ## Uncertainties from tau21 < 0.43
-                    jet_msdcorr_tau21DDT_jesUp = jet_msdcorr_nom*(1. + delta)
-                    jet_msdcorr_tau21DDT_jesDown = jet_msdcorr_nom*(1. - delta)
+                    jet_msdcorr_tau21DDT_jesUp = jet_msdcorr_tau21DDT_nom*(1. + delta)
+                    jet_msdcorr_tau21DDT_jesDown = jet_msdcorr_tau21DDT_nom*(1. - delta)
                     jets_msdcorr_tau21DDT_jesUp  [jesUncertainty].append(jet_msdcorr_tau21DDT_jesUp)
                     jets_msdcorr_tau21DDT_jesDown[jesUncertainty].append(jet_msdcorr_tau21DDT_jesDown)                    
 
