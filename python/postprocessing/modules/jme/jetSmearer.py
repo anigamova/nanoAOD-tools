@@ -132,7 +132,7 @@ class jetSmearer(Module):
     
 
 
-    def getSmearValsM(self, jetIn, genJetIn ):
+    def getSmearValsM(self, jetIn, genJetIn, jmrVals = None):
         if hasattr( jetIn, "p4"):
             jet = jetIn.p4()
         else :
@@ -142,7 +142,9 @@ class jetSmearer(Module):
         else :
             genJet = genJetIn
 
-        
+        if not jmrVals:
+            jmrVals = [0.1, 0.2, 0.0]
+
         #--------------------------------------------------------------------------------------------
         # CV: Smear jet m to account for measured difference in JER between data and simulation.
         #     The function computes the nominal smeared jet m simultaneously with the JER up and down shifts,
@@ -164,7 +166,7 @@ class jetSmearer(Module):
         enum_shift_down      = 1
         #--------------------------------------------------------------------------------------------
 
-        jet_m_sf_and_uncertainty = dict( zip( [enum_nominal, enum_shift_up, enum_shift_down], [0.1, 0.2, 0.0] ) )
+        jet_m_sf_and_uncertainty = dict( zip( [enum_nominal, enum_shift_up, enum_shift_down],  jmrVals) )
 
         # generate random number with flat distribution between 0 and 1
         u = self.rnd.Rndm()
