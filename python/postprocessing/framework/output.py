@@ -75,6 +75,7 @@ class FullOutput(OutputTree):
             outputbranchSelection=None,
             fullClone=False,
             provenance=False,
+            genwt=0,
             jsonFilter=None
     ):
         outputFile.cd()
@@ -118,6 +119,8 @@ class FullOutput(OutputTree):
                 print "Not copying unknown tree %s" % kn
             else:
                 self._otherObjects[kn] = inputFile.Get(kn)
+        self._otherObjects["genWtHist"] = ROOT.TH1D("genWtHist","genWtHist",1,0,1) 
+        self._otherObjects["genWtHist"].SetBinContent(1,genwt)
     def fill(self):
         self._inputTree.readAllBranches()
         self._tree.Fill()

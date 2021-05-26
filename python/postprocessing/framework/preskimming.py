@@ -44,23 +44,44 @@ class JSONFilter:
                     filteredList.Enter(entry)
         tree.SetBranchStatus("*", 1)
         return filteredList
-                
+def getEventSumw(tree, elist):
+    tree.SetBranchStatus("*",0)
+    tree.SetBranchStatus('genWeight',1)
+    genEventSumw = 0.
+    if elist:
+        for i in xrange(elist.GetN()):
+            entry = elist.GetEntry(0) if i==0 else elist.Next()
+            tree.GetEntry(entry)
+            genEventSumw+=tree.genWeight
+    else:
+        for entry in xrange(tree.GetEntries()):
+            tree.GetEntry(entry)
+            genEventSumw+=tree.genWeight
+    tree.SetBranchStatus("*", 1)
+    return genEventSumw                
 
 def preSkim(tree, jsonInput = None, cutstring = None):
     if jsonInput == None and cutstring == None: 
         return None,None
     cut = None
     jsonFilter = None
+    genSumw=0.
     if jsonInput != None:
 	if type(jsonInput) is dict:
             jsonFilter = JSONFilter(runsAndLumis=jsonInput)
 	else:
             jsonFilter = JSONFilter(jsonInput)
         cut = jsonFilter.runCut()
+    tree.Draw('>>jsonelist',"","entrylist")
+    jsonelist = ROOT.gDirectory.Get('jsonelist')
+    if jsonInput:
+        jsonelist = jsonFilter.filterEList(tree,jsonelist)
+    if hasattr(tree, 'genWeight'):
+        genSumw = getEventSumw(tree,jsonelist)
     if cutstring != None: 
         cut = "(%s) && (%s)" % (cutstring, cut) if cut else cutstring
     tree.Draw('>>elist',cut,"entrylist")
     elist = ROOT.gDirectory.Get('elist')
     if jsonInput:
         elist = jsonFilter.filterEList(tree,elist)
-    return elist,jsonFilter
+    return elist,jsonFilter,genSumw

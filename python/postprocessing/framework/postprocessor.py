@@ -93,7 +93,7 @@ class PostProcessor :
 	    if inTree == None: inTree = inFile.Get("Friends")
 	    totEntriesRead+=inTree.GetEntries()
 	    # pre-skimming
-	    elist,jsonFilter = preSkim(inTree, self.json, self.cut)
+	    elist,jsonFilter,genSumw = preSkim(inTree, self.json, self.cut)
 	    if self.justcount:
 		print 'Would select %d entries from %s'%(elist.GetN() if elist else inTree.GetEntries(), fname)
 		continue
@@ -134,6 +134,7 @@ class PostProcessor :
                         outputbranchSelection=self.outputbranchsel,
                         fullClone=fullClone,
                         jsonFilter=jsonFilter,
+                        genwt = genSumw,
                         provenance=self.provenance)
             else : 
                 outFile = None
