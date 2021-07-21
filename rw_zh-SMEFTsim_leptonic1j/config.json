@@ -1,0 +1,33 @@
+{
+    "blocks": [
+        "SMEFT"
+    ],
+    "inactive": {
+        "default_val": 0.0,
+        "parameters": []
+    },
+    "parameter_defaults": {
+        "block": "SMEFT",
+        "gen": 0.0,
+        "sm": 0.0,
+        "val": 0.1
+    },
+    "parameters": [
+        {
+            "index": 24,
+            "name": "chq1"
+        },
+        {
+            "index": 25,
+            "name": "chq3"
+        },
+        {
+            "index": 26,
+            "name": "chu"
+        },
+        {
+            "index": 27,
+            "name": "chd"
+        }
+    ]
+}
