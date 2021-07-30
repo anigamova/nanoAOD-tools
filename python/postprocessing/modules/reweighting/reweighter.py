@@ -9,8 +9,8 @@ import numpy as np
 import warnings
 
 class ReweighterTemplate(Module):
-  def __init__(self, rw_module_path, partsName, verb=False):
-    self.rw_module = standalone_reweight.StandaloneReweight(rw_module_path)
+  def __init__(self, rw_module_path, partsName, verb=False, no_match_behaviour='sm weights'):
+    self.rw_module = standalone_reweight.StandaloneReweight(rw_module_path, no_match_behaviour)
     self.partsName = partsName
     self.verb = verb
 
@@ -91,6 +91,8 @@ class ReweighterTemplate(Module):
     if self.acceptEvent(event):
       rw_event = definitions.Event(0, event.genWeight, self.getParticles(event), self.getAlphas(event))
       reweights = rw_event.getReweights(self.rw_module)
+      if reweights is False:
+        return False
       self.out.fillBranch("Reweights", [i * event.genWeight for i in reweights])
 
       if self.verb:
@@ -102,8 +104,8 @@ class ReweighterTemplate(Module):
       return False
 
 class LHEReweighter(ReweighterTemplate):
-  def __init__(self, rw_module_path, verb=False):
-    ReweighterTemplate.__init__(self, rw_module_path, "LHEPart", verb)
+  def __init__(self, rw_module_path, verb=False, no_match_behaviour='sm weights'):
+    ReweighterTemplate.__init__(self, rw_module_path, "LHEPart", verb, no_match_behaviour)
   
   def isIncomingParton(self, part, event, index):
     return part.status == -1

@@ -85,6 +85,7 @@ if __name__ == "__main__":
 
     parser.add_option("-m", "--method", dest="method", type="string", default="LHE")     
     parser.add_option("-v", "--verbose", dest="verb", action="store_true", default=False)
+    parser.add_option("--drop", dest="drop", action="store_true", default=False)
 
     (options, args) = parser.parse_args()
 
@@ -107,7 +108,12 @@ if __name__ == "__main__":
     Reweighter = getattr(rw, options.method+"Reweighter")
     checkKeepDrop(options.branchsel_in, options.branchsel_out, options.method)
 
-    modules = [Reweighter(rw_path, verb=options.verb)]
+    if options.drop:
+      no_match_behaviour = 'return False'
+    else:
+      no_match_behaviour = 'sm weights'
+
+    modules = [Reweighter(rw_path, verb=options.verb, no_match_behaviour=no_match_behaviour)]
 
     p = PostProcessor(outdir, input_files,
                       cut=options.cut,
