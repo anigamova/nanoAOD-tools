@@ -90,16 +90,18 @@ class ReweighterTemplate(Module):
     """process event, return True (go to next module) or False (fail, go to next event)"""
     if self.acceptEvent(event):
       rw_event = definitions.Event(0, event.genWeight, self.getParticles(event), self.getAlphas(event))
-      reweights = rw_event.getReweights(self.rw_module)
+      if self.verb: print(rw_event)
+
+      reweights = rw_event.getReweights(self.rw_module, self.verb)
+      if self.verb: print(str(reweights) + "\n")
+
       if reweights is False:
         return False
-      self.out.fillBranch("Reweights", [i * event.genWeight for i in reweights])
-
-      if self.verb:
-        print(rw_event)
-        print(reweights)
-        print(" ")
-      return True
+      else:
+        self.out.fillBranch("Reweights", reweights) #just matrix elements
+        #self.out.fillBranch("Reweights", [i * event.genWeight for i in reweights])
+        return True
+  
     else:
       return False
 

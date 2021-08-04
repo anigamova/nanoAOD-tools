@@ -37,15 +37,10 @@ if len(args) < 2:
 filename = args[0]
 outname = args[1]
 
-if (options.tag_branch is not None) and (options.inclusive):
-  print("If choosing an inclusive binning, do not specify a tag branch")
-  parser.print_help()
-  sys.exit(1)
-
 if options.keys is not None:
   options.keys = options.keys.split(",")
   if len(options.keys) != 2:
-    print("Must have just two key files (one for each tag branch)")
+    print("Must have two key files (one for each tag branch)")
     parser.print_help()
     sys.exit(1)
   else:

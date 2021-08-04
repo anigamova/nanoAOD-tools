@@ -95,7 +95,7 @@ def makeInputOutputTxt(options):
   with open("%s/keep_and_drop.txt"%os.environ.get("TMPDIR"), "w") as f:
     f.write(txt)
 
-def run(df, files, options):
+def run(df, files, options, dataset):
   if options.test:
     files = [files[0]]
     maxEntries = 10000
@@ -103,8 +103,8 @@ def run(df, files, options):
     maxEntries = None
 
   print(">> Starting skim")
-  postfix = "_temp"
-  p = PostProcessor(".", files, branchsel="%s/keep_and_drop.txt"%os.environ.get("TMPDIR"), modules=[ExampleAnalysis(df, extraBranches=options.extraBranches)], postfix=postfix, prefetch=True, maxEntries=maxEntries)
+  postfix = "_%s_temp"%options.output_root.split("/")[-1].split(".")[0]
+  p = PostProcessor(".", files, branchsel="%s/keep_and_drop.txt"%os.environ.get("TMPDIR"), modules=[ExampleAnalysis(df, options.keepNoTag, options.NoTagIndex, options.extraBranches)], postfix=postfix, prefetch=True, maxEntries=maxEntries)
   p.run()
   print(">> Skim complete")
 
@@ -114,12 +114,13 @@ def run(df, files, options):
   #merge root files
   print(">> Merging root files")
   new_file_names = ["%s%s.root"%(pre, postfix) for pre in prescripts]
-  os.system("hadd -f %s %s"%(options.output_root, " ".join(new_file_names))) 
-  
-  #remove remaining root files after merge
-  command = "rm %s"%" ".join(new_file_names)
-  os.system(command)
+  exit_status = os.system("hadd -ff %s %s"%(options.output_root, " ".join(new_file_names))) 
 
+  if exit_status == 0: #merge successful
+    #remove remaining root files after merge
+    command = "rm %s"%" ".join(new_file_names)
+    os.system(command)
+    
 def processExtraBranches(options, df):
   if options.extraBranches != None:
     if options.extraBranches == "auto":
@@ -151,7 +152,10 @@ if __name__=="__main__":
                     help="Path to output root file, e.g. path/to/myroot.root")
   parser.add_option('--datasetJson', dest='datasetJson', default="eventIDSkimming/datasetKeys.json",
                     help="Path to json dict that stores dataset shortcuts")
-  
+  parser.add_option('--keepNoTag', dest='keepNoTag', default=False, action="store_true",
+                    help="Specify whether to keep your NoTag events (if you included those in the event IDs csv file).")
+  parser.add_option('--NoTagIndex', dest='NoTagIndex', default=0,
+                    help="The number/index that corresponds to the NoTag category. Default is 0.")
 
   (options, args) = parser.parse_args()
   
@@ -165,6 +169,7 @@ if __name__=="__main__":
     with open(options.datasetJson, "r") as f:
       dataset_dict = json.loads(f.read())
   except:
+    print("Not using datasetKeys.json")
     dataset_dict = {}
 
   if dataset in dataset_dict.keys():
@@ -183,4 +188,4 @@ if __name__=="__main__":
   if options.output_root is None:
     options.output_root = dataset.split("/")[1] + ".root"
   
-  run(df, files, options)
+  run(df, files, options, dataset)
