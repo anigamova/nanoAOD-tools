@@ -489,7 +489,7 @@ class VHbbProducer(Module):
     #def categoriseEvent(self, lepton_channel,higgs,leptons,MET,fatJet,n_add_jets):
         channel=-1;channel_STXS=-1
         V_pt = V.Pt()
-        V_mass = V.Pt()
+        V_mass = V.M()
         MET_Pt = MET.Pt()
         H_pt = higgs.Pt()
         H_mass = higgs.M()

@@ -1,2 +1,10 @@
 # this is a comment
 drop *
+keep Reweights*
+keep Reco*
+keep H_mass*
+keep V_pt*
+keep HTXS*
+keep Gen*
+keep genWeight
+keep LHE*
