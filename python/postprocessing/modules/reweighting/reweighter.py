@@ -126,8 +126,8 @@ class LHEReweighter(ReweighterTemplate):
       raise Exception("Particle is not a parton, nor is this a 2->1 process. Uncertain how to proceed.")
 
 class GenReweighter(ReweighterTemplate):
-  def __init__(self, rw_module_path, pdgs=None, verb=False):
-    ReweighterTemplate.__init__(self, rw_module_path, "GenPart", verb)
+  def __init__(self, rw_module_path, pdgs=None, verb=False, no_match_behaviour='sm weights'):
+    ReweighterTemplate.__init__(self, rw_module_path, "GenPart", verb, no_match_behaviour)
     self.wanted_pdgs = pdgs
 
   def getStatus(self, part, event, index):
