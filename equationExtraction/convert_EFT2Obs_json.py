@@ -43,8 +43,9 @@ def cleanUp(new_json_dict, options):
     params = filter(lambda x: x[0] != "u", params)
     max_coeff = 0
     for param in params:
-      if abs(new_json_dict[tag][param]) > max_coeff:
-        max_coeff = abs(new_json_dict[tag][param])
+      maybe_max_coeff = abs(new_json_dict[tag][param]) - 3*new_json_dict[tag]["u_"+param]
+      if maybe_max_coeff > max_coeff:
+        max_coeff = maybe_max_coeff
     for param in params:
       if abs(new_json_dict[tag][param]) < options.relative_threshold * max_coeff:
         del new_json_dict[tag][param]

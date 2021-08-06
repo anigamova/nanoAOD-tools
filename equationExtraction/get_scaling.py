@@ -37,6 +37,7 @@ parser.add_argument('--translate-tex', default=None, help="json file to translat
 parser.add_argument('--translate-txt', default=None, help="json file to translate parameter names in the text file")
 parser.add_argument('--bin-labels', default=None, help="json file to translate bin labels")
 parser.add_argument('--nlo', action='store_true', help="Set if weights came from NLO reweighting")
+parser.add_argument('--surpressPrint', action='store_true')
 args = parser.parse_args()
 
 
@@ -116,7 +117,7 @@ n_divider = 65
 
 
 def PrintEntry(label, val, err):
-    print '%-20s | %12.4f | %12.4f | %12.4f' % (label, val, err, abs(err / val))
+    if not args.surpressPrint: print '%-20s | %12.4f | %12.4f | %12.4f' % (label, val, err, abs(err / val))
 
 if args.bin_labels is not None:
     res["bin_labels"] = bin_labels[args.hist]
@@ -124,19 +125,19 @@ if args.bin_labels is not None:
 for ib in xrange(nbins):
     terms = []
     sm = BinStats(hists[0].bins[ib])
-    print '-' * n_divider
-    print 'Bin %-4i numEntries: %-10i mean: %-10.3g stderr: %-10.3g' % (ib, hists[0].bins[ib].numEntries, sm[0], sm[1])
+    if not args.surpressPrint: print '-' * n_divider
+    if not args.surpressPrint: print 'Bin %-4i numEntries: %-10i mean: %-10.3g stderr: %-10.3g' % (ib, hists[0].bins[ib].numEntries, sm[0], sm[1])
     extra_label = ''
     if args.bin_labels is not None:
         extra_label += ', label=%s' % res["bin_labels"][ib]
-    print '         edges: %s%s' % (res['edges'][ib], extra_label)
-    print '-' * n_divider
+    if not args.surpressPrint: print '         edges: %s%s' % (res['edges'][ib], extra_label)
+    if not args.surpressPrint: print '-' * n_divider
     if sm[0] == 0:
         res["bins"].append(terms)
         continue
     else:
-        print '%-20s | %12s | %12s | %12s' % ('Term', 'Val', 'Uncert', 'Rel. uncert.')
-        print '-' * n_divider
+        if not args.surpressPrint: print '%-20s | %12s | %12s | %12s' % ('Term', 'Val', 'Uncert', 'Rel. uncert.')
+        if not args.surpressPrint: print '-' * n_divider
     for ip in xrange(len(pars)):
         lin = BinStats(hists[ip * 2 + 1].bins[ib])
         if lin[0] == 0.:

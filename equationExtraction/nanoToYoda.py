@@ -57,6 +57,7 @@ if options.keys is not None:
 
 #open nanoAOD 
 f = uproot.open(filename)
+print("Reading in reweights")
 reweights=f["Events"]["Reweights"].array(library='np')
 
 #if using different original weight, find scaling and apply to new original weights
@@ -69,10 +70,12 @@ if options.weight_branch is not None:
 if options.inclusive:
   tag = np.zeros(len(reweights))
 else:
+  print("Reading in tag")
   tag=f["Events"][options.tag_branch].array()
 
   #if using >1 tag, create new tag from combination of tag1 and tag2
   if options.tag_branch2 is not None:
+    print("Reading in tag2")
     tag2 = f["Events"][options.tag_branch2].array(library='np')
     
     #if don't have keys, find range of tag2 from nanoAOD, then calculate new tag
@@ -88,7 +91,13 @@ else:
       n_tags2 = max(t2_key.keys()) - min(t2_key.keys()) + 1
       new_tag = (tag * n_tags2) + tag2
 
+      assert max(tag) <= max(t1_key.keys())
+      assert min(tag) >= min(t1_key.keys())
+      assert max(tag2) <= max(t2_key.keys())
+      assert min(tag2) >= min(t2_key.keys())
+
       #create a new key for new tag
+      print("Creating new key")
       if options.key_output is not None:
         new_key = OrderedDict()
         for t1 in t1_key.keys():
@@ -96,6 +105,7 @@ else:
             new_name = t1_key[t1] + "_" + t2_key[t2]
             new_key[(t1*n_tags2) + t2] = new_name
 
+        print("Writing new key")
         with open(options.key_output, "w") as f:
           f.write(json.dumps(new_key, indent=4))
 

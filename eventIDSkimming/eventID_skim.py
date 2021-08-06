@@ -14,6 +14,8 @@ from Utilities.General.cmssw_das_client import get_data as das_query
 import pickle
 import pandas as pd
 import json
+from collections import OrderedDict
+import warnings
 
 class ExampleAnalysis(Module):
   def __init__(self, df, keepNoTag=False, NoTagIndex=0, extraBranches=[]):
@@ -69,7 +71,9 @@ class ExampleAnalysis(Module):
 
 def findFiles(dataset):
   print(">> Finding files for %s"%dataset)
-  query = das_query("file dataset=%s"%dataset)
+  print("> Grid proxy: %s" % os.environ.get("X509_USER_PROXY"))
+  print("file dataset=%s"%dataset)
+  query = das_query("file dataset=%s"%dataset, cmd="dasgoclient -dasmaps /afs/cern.ch/user/m/mknight")
   files = [each['file'][0] for each in query['data']]
 
   totalN = sum([f['nevents'] for f in files])
@@ -77,7 +81,6 @@ def findFiles(dataset):
 
   files_dir = ["root://xrootd-cms.infn.it/%s"%f['name'] for f in files]
   return files_dir
-
 
 def addKeep(txt, collection):
   return txt + "\nkeep %s*"%collection
@@ -139,6 +142,39 @@ def processExtraCollections(options):
   else:
     options.extraCollections = []
 
+def addJobDetails(options, dataset, df_csv):
+  try:
+    with open(options.job_json, "r") as f:
+      jobs = json.loads(f.read(), object_pairs_hook=OrderedDict)
+  except:
+    jobs = []
+
+  df_csv = os.path.abspath(df_csv)
+  options.output_root = os.path.abspath(options.output_root)
+  if dataset in [job['dataset'] for job in jobs]:
+    warnings.warn("This dataset already exists in a job.")
+  if df_csv in [job['csv'] for job in jobs]:
+    warnings.warn("This csv file already exists in a job.")
+
+  if not options.test:
+    options.test = None
+  if not options.keepNoTag:
+    options.keepNoTag = None
+
+  new_job = OrderedDict()
+  new_job["dataset"] = dataset
+  new_job["csv"] = df_csv
+  new_job["output"] = options.output_root
+  new_job["extraBranches"] = str(options.extraBranches)
+  new_job["extraCollections"] = str(options.extraCollections)
+  new_job["test"] = str(options.test)
+  new_job["keepNoTag"] = str(options.keepNoTag)
+  new_job["NoTagIndex"] = options.NoTagIndex
+  jobs.append(new_job)
+
+  with open(options.job_json, "w") as f:
+    f.write(json.dumps(jobs, indent=4))
+
 if __name__=="__main__":
   from optparse import OptionParser
   parser = OptionParser(usage="%prog dataset df_csv")
@@ -156,6 +192,7 @@ if __name__=="__main__":
                     help="Specify whether to keep your NoTag events (if you included those in the event IDs csv file).")
   parser.add_option('--NoTagIndex', dest='NoTagIndex', default=0,
                     help="The number/index that corresponds to the NoTag category. Default is 0.")
+  parser.add_option("--job-json", dest="job_json", default=None)
 
   (options, args) = parser.parse_args()
   
@@ -174,6 +211,11 @@ if __name__=="__main__":
 
   if dataset in dataset_dict.keys():
     dataset = dataset_dict[dataset]
+
+  if options.job_json is not None:
+      print("Adding details of job to %s. Will not run reweighting."%options.job_json)
+      addJobDetails(options, dataset, df_csv)
+      exit()
 
   files = findFiles(dataset)
   
