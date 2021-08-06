@@ -8,6 +8,8 @@ ROOT.PyConfig.IgnoreCommandLineOptions = True
 
 import warnings
 import PhysicsTools.NanoAODTools.postprocessing.modules.reweighting.reweighter as rw
+import PhysicsTools.NanoAODTools.postprocessing.modules.reweighting.vhbb_analysis as vhbb
+
 
 def checkKeepDrop(keep_drop_input, keep_drop_output, method):
     check_for = ["keep LHE_AlphaS", "keep genWeight", "keep LHEPart*", "keep GenPart*", "keep Generator*"]
@@ -93,22 +95,32 @@ if __name__ == "__main__":
             raise RuntimeError(
                 "Can't apply JSON or cut selection when producing friends")
 
-    if len(args) < 3:
+    if len(args) < 2:
         parser.print_help()
         sys.exit(1)
     outdir = args[0]
-    input_files = [args[1]]
-    rw_path = args[2]
+    input_files = [
+'/eos/cms/store/mc/RunIIAutumn18NanoAODv6/ZH_HToBB_ZToLL_M125_13TeV_powheg_pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/230000/17227660-5AAA-7844-A6B9-B38362ABE23F.root',
+'/eos/cms/store/mc/RunIIAutumn18NanoAODv6/ZH_HToBB_ZToLL_M125_13TeV_powheg_pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/230000/38D746F3-783A-064E-9AC3-AB2D85032250.root',
+'/eos/cms/store/mc/RunIIAutumn18NanoAODv6/ZH_HToBB_ZToLL_M125_13TeV_powheg_pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/230000/5CE71A7A-B111-DE40-907A-7ABCCDC6315C.root',
+'/eos/cms/store/mc/RunIIAutumn18NanoAODv6/ZH_HToBB_ZToLL_M125_13TeV_powheg_pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/230000/688060C7-151C-4944-82F2-5E691AED6AC9.root',
+'/eos/cms/store/mc/RunIIAutumn18NanoAODv6/ZH_HToBB_ZToLL_M125_13TeV_powheg_pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/230000/99F692D0-AB49-A840-9D79-F8A062D1441C.root',
+'/eos/cms/store/mc/RunIIAutumn18NanoAODv6/ZH_HToBB_ZToLL_M125_13TeV_powheg_pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/230000/DFD2630A-096A-DB4F-932C-C97497CA6C2F.root',
+]
+    rw_path = args[1]
 
     if options.branchsel != None:
         options.branchsel_in = options.branchsel
         options.branchsel_out = options.branchsel
-
-    Reweighter = getattr(rw, options.method+"Reweighter")
-    checkKeepDrop(options.branchsel_in, options.branchsel_out, options.method)
-
-    modules = [Reweighter(rw_path, verb=options.verb)]
-
+    if options.method=="vhbb":
+        #modules = [rw.VHbbReweighter(rw_path, verb=options.verb)]
+        modules = [vhbb.vhbb2018_gen(),rw.VHbbReweighter(rw_path, verb=options.verb)]
+        #modules = [vhbb.jmeCorrections2018MC(),vhbb.jmeCorrections2018MCAll(),vhbb.mhtVHbb(),vhbb.vhbb2018(), rw.VHbbReweighter(rw_path, verb=options.verb)]
+        #modules = [puWeight_2018(),jmeCorrections2018MC(),jmeCorrections2018MCAll(),mhtVHbb(),vhbb.vhbb2018(), rw.VHbbReweighter(rw_path, verb=options.verb)]
+    else:
+        Reweighter = getattr(rw, options.method+"Reweighter")
+        checkKeepDrop(options.branchsel_in, options.branchsel_out, options.method)
+        modules = [Reweighter(rw_path, verb=options.verb)]
     p = PostProcessor(outdir, input_files,
                       cut=options.cut,
                       branchsel=options.branchsel_in,

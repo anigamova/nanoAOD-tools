@@ -3,6 +3,7 @@ from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
 import ROOT
 ROOT.PyConfig.IgnoreCommandLineOptions = True
 
+#import standalone_reweight_EFT2Obs as standalone_reweight
 import standalone_reweight
 import event as definitions
 import numpy as np
@@ -236,6 +237,67 @@ class H4LReweighter(HiggsDecayReweighter):
       rw_parts[1], rw_parts[3] = rw_parts[3], rw_parts[1]
       rw_parts[2], rw_parts[4] = rw_parts[4], rw_parts[2]    
     return rw_parts
+
+#class VHbbReweighter(HiggsDecayReweighter):
+#  def filterPart(self, part, event, index):
+#    """Accept Higgs and decay products but not intermediate Z"""
+#    if HiggsDecayReweighter.filterPart(self, part, event, index):
+#      if part.pdgId == 23:
+#        return False
+#      return True
+#    return True
+
+class VHbbReweighter(GenReweighter):
+  def analyze(self, event):
+    """process event, return True (go to next module) or False (fail, go to next event)"""
+    if self.acceptEvent(event):
+      rw_event = definitions.Event(0, event.genWeight, self.getParticles(event), self.getAlphas(event))
+      reweights = rw_event.getReweights(self.rw_module)
+      if isinstance(reweights, list):self.out.fillBranch("Reweights", [i * event.genWeight for i in reweights])
+      else: return False
+      if self.verb:
+        print(rw_event)
+        print(reweights)
+        print(" ")
+      return True
+    else:
+      return False
+  def isDirectDaughterOfHiggs(self, part, event, index):
+    """Includes non-direct daughters"""
+    parts = Collection(event, self.partsName)
+    mother_index = part.genPartIdxMother
+    if mother_index >= 0:
+      mother = parts[mother_index]
+      if mother.pdgId == 25:
+        return True
+      else:
+        return False
+    else:
+      return False
+  def filterPart(self, part, event, index):
+    print part.genPartIdxMother, part.pdgId
+    if self.isHardProcess(part):
+      if self.isIncomingParton(part, event, index):
+        return True
+      elif self.isDirectDaughterOfHiggs(part, event, index) or part.pdgId == 23 or (abs(part.pdgId) <=9 or part.pdgId ==21):
+      #elif self.isDirectDaughterOfHiggs(part, event, index) or part.pdgId == 23 or ((abs(part.pdgId) <=9 or part.pdgId ==21) and self.isIncomingParton(part, event, index)==0):
+        return False
+      else:
+        return True
+    else: return False
+  def getStatus(self, part, event, index):
+    """Just a guess for now"""
+    if part.status == 21:
+      return -1
+    else:
+      return 1
+  def getParticles(self, event):
+    """Grab particles and then reorder them so they line up with what rw module expects"""
+    rw_parts = GenReweighter.getParticles(self, event)
+    for i in range(len(rw_parts)):
+      print rw_parts[i].pdg_id
+    return rw_parts
+
 
 class ggFReweighter(LHEReweighter):
   def acceptEvent(self, event):
