@@ -2,6 +2,7 @@ import ROOT
 ROOT.PyConfig.IgnoreCommandLineOptions = True
 import sys
 import copy
+import math
 
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection,Object
 from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
@@ -58,6 +59,57 @@ class VHbbProducer(Module):
         pass
     def endJob(self):
         pass
+    def EquationSolve(self, a, b, c, d):
+
+
+      result = []
+
+
+
+      if (a != 0):
+
+        q = (3*a*c-b*b)/(9*a*a)
+        r = (9*a*b*c - 27*a*a*d - 2*b*b*b)/(54*a*a*a)
+        Delta = q*q*q + r*r
+
+        rho=0.
+        theta=0.
+
+        if( Delta<=0):
+          rho = math.sqrt(-(q*q*q))
+
+          theta = acos(r/rho)
+
+          s = complex(math.sqrt(-q)*cos(theta/3.0),math.sqrt(-q)*sin(theta/3.0))
+          t = complex(math.sqrt(-q)*cos(-theta/3.0),math.sqrt(-q)*sin(-theta/3.0))
+
+        if(Delta>0):
+          #print r, math.sqrt(Delta)
+          if (r+math.sqrt(Delta) > 0):
+              s = complex(pow((r+math.sqrt(Delta)),(1./3)),0)
+          else:
+              s = complex(-pow(abs((r+math.sqrt(Delta))),(1./3)),0)
+          if (r-math.sqrt(Delta) > 0):
+              t = complex(pow((r-math.sqrt(Delta)),(1./3)),0)
+          else:
+              t = complex(-pow(abs((r-math.sqrt(Delta))),(1./3)),0)
+
+        i = complex(0.,1.0)
+
+        x1 = s+t+complex(-b/(3.0*a),0)
+        x2 = (s+t)*complex(-0.5,0)-complex(b/(3.0*a),0)+(s-t)*i*complex(math.sqrt(3)/2.0,0)
+        x3 = (s+t)*complex(-0.5,0)-complex(b/(3.0*a),0)-(s-t)*i*complex(math.sqrt(3)/2.0,0)
+
+        if(abs(x1.imag)<0.0001): result.append(x1.real)
+        if(abs(x2.imag)<0.0001): result.append(x2.real)
+        if(abs(x3.imag)<0.0001): result.append(x3.real)
+
+        #print x1,x2,x3
+        return result
+      else:
+          return result
+
+      return result
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.out = wrappedOutputTree
         self.out.branch("Reco_Cat",   "I");
@@ -66,16 +118,39 @@ class VHbbProducer(Module):
         self.out.branch("V_eta",    "F");
         self.out.branch("V_phi",   "F");
         self.out.branch("V_mass",  "F");
-        #self.out.branch("V_mt",    "F");
+        self.out.branch("V_mt",    "F");
         self.out.branch("H_pt",  "F");
         self.out.branch("H_eta",  "F");
         self.out.branch("H_phi",  "F");
         self.out.branch("H_mass",  "F");
-        self.out.branch("BH_pt",  "F");
-        self.out.branch("BH_eta",  "F");
-        self.out.branch("BH_phi",  "F");
-        self.out.branch("BH_mass",  "F");
+        self.out.branch("FatJetCandidate_pt",  "F");
+        self.out.branch("FatJetCandidate_eta",  "F");
+        self.out.branch("FatJetCandidate_phi",  "F");
+        self.out.branch("FatJetCandidate_mass",  "F");
         self.out.branch("Jet_lepFilter", "F", 1, "nJet");
+        self.out.branch("HJ1_HJ2_dPhi","F")
+        self.out.branch("HJ1_HJ2_dEta","F")
+        self.out.branch("HJ1_HJ2_dR","F")
+        self.out.branch("hJets_leadingPt","F")
+        self.out.branch("hJets_subleadingPt","F")
+        self.out.branch("hJets_btagWP_0","F")
+        self.out.branch("hJets_btagWP_1","F")
+        self.out.branch("nAddJets302p4_puid","F")
+        self.out.branch("otherJetsHighestPt","F")
+        self.out.branch("otherJetsHighestBtag","F")
+        self.out.branch("minDPhiFromOtherJets","F")
+        self.out.branch("SA5","F")
+
+        self.out.branch("HVdR","F")
+        self.out.branch("HVdEta","F")
+        self.out.branch("HVdPhi","F")
+        self.out.branch("VPtjjRatio","F")
+        self.out.branch("jjVPtRatio","F")
+        self.out.branch("MET_Pt","F")
+        self.out.branch("lepMetDPhi","F")
+        self.out.branch("Top1_mass_fromLepton_regPT_w4MET","F")
+
+
 #        self.out.branch("Jet_CvsL", "F", 1, "nJet")
 #        self.out.branch("Jet_CvsB", "F", 1, "nJet")
 #        self.out.branch("Jet_DeepFlavCvsL", "F", 1, "nJet")
@@ -100,14 +175,15 @@ class VHbbProducer(Module):
 #        self.out.branch("SAhbbfj5",  "F");
 #        
         self.out.branch("FatJet_lepFilter",  "O", 1, "nFatJet");
-#        self.out.branch("FatJet_Pt", "F", 1, "nFatJet");
-#        self.out.branch("FatJet_Msoftdrop", "F", 1, "nFatJet");
+        self.out.branch("FatJetCandidate_deepTagMD_bbvsLight",  "F");
+#        self.out.branch("FatJetCandidate_Pt", "F", 1, "nFatJet");
+#        self.out.branch("FatJetCandidate_Msoftdrop", "F", 1, "nFatJet");
 #        
-#        self.out.branch("FatJet_FlavourComposition", "I", 1, "nFatJet"); #55 bb, #54 bc, #5 b, #4 c, #44 cc, #1 other
+#        self.out.branch("FatJetCandidate_FlavourComposition", "I", 1, "nFatJet"); #55 bb, #54 bc, #5 b, #4 c, #44 cc, #1 other
 #        
-#        self.out.branch("FatJet_HiggsProducts", "O", 1, "nFatJet");
-#        self.out.branch("FatJet_WProducts", "O", 1, "nFatJet");
-#        self.out.branch("FatJet_ZProducts", "O", 1, "nFatJet");
+#        self.out.branch("FatJetCandidate_HiggsProducts", "O", 1, "nFatJet");
+#        self.out.branch("FatJetCandidate_WProducts", "O", 1, "nFatJet");
+#        self.out.branch("FatJetCandidate_ZProducts", "O", 1, "nFatJet");
 #        
 #        ## Gen information
 #        self.out.branch("nGenStatus2bHad", "I");
@@ -275,6 +351,162 @@ class VHbbProducer(Module):
         elif (wp == "90"):
             return el.mvaFall17V2Iso_WP90
 
+    def computeTopMass_new(self, lep, met, jet, METmethod):
+        new_top = ROOT.TLorentzVector()
+        jet_transverse = ROOT.TLorentzVector()
+        lep_transverse = ROOT.TLorentzVector()
+        if METmethod == 1:
+           jet_transverse.SetPxPyPzE(jet.Px(),jet.Py(),0,math.sqrt((jet.M())**2 + (jet.Pt())**2))   
+           lep_transverse.SetPxPyPzE(lep.Px(),lep.Py(),0,math.sqrt((lep.M())**2 + (lep.Pt())**2))   
+
+           new_top = jet_transverse + lep_transverse + met
+        elif METmethod == 2:
+           neutrino = ROOT.TLorentzVector()
+           neutrino = self.getNu4Momentum(lep, met)
+           new_top = lep + jet + neutrino
+        elif METmethod == 3:
+           new_top = lep + jet + met
+
+        return new_top.M()
+    def get_topMass(self, jets, lepton,met):
+      minDR = 999
+      closestJet_4v = ROOT.TLorentzVector()
+      closestJet = -1;
+      for jet in jets:
+          if (self.pt(jet,self.isMC,noReg=False)>30 and self.btag(jet)>self.cutDict["common"]['tag_wpL'] and jet.lepFilter and ((jet.puId>0 and self.pt(jet,self.isMC,noReg=True)>50) or jet.puId>6) and jet.jetId>0): 
+              dR = jet.DeltaR(lepton)
+              if (dR < minDR):
+                  minDR = dR
+                  closestJet = jet
+      if closestJet!=-1: 
+          closestJet_4v.SetPtEtaPhiM(self.pt(closestJet,self.isMC,noReg=False), closestJet.eta, closestJet.phi, closestJet.mass)
+          top_mass = self.computeTopMass_new(lepton, met, closestJet_4v, 2)
+      else: top_mass=-99.
+      return top_mass
+    def getNu4Momentum(self, TLepton, TMET, debug=False):
+
+      branch = -1
+
+      Lepton = ROOT.TLorentzVector()
+      Lepton.SetPxPyPzE(TLepton.Px(), TLepton.Py(), TLepton.Pz(), TLepton.E());
+      MET = ROOT.TLorentzVector()
+      MET.SetPxPyPzE(TMET.Px(), TMET.Py(), 0., TMET.E());
+
+      mW = 80.38;
+
+      result = []
+
+      MisET2 = (MET.Px()*MET.Px() + MET.Py()*MET.Py());
+      mu = (mW*mW)/2 + MET.Px()*Lepton.Px() + MET.Py()*Lepton.Py();
+      a  = (mu*Lepton.Pz())/(Lepton.Energy()*Lepton.Energy() - Lepton.Pz()*Lepton.Pz());
+      a2 = pow(a,2);
+      b  = (pow(Lepton.Energy(),2.)*(MisET2) - pow(mu,2.))/(pow(Lepton.Energy(),2) - pow(Lepton.Pz(),2));
+      pz1 = 0.
+      pz2 = 0.
+      pznu = 0.
+      nNuSol = 0
+
+      p4nu_rec = ROOT.TLorentzVector()
+      p4W_rec = ROOT.TLorentzVector()
+      p4b_rec = ROOT.TLorentzVector()
+      p4Top_rec = ROOT.TLorentzVector()
+      p4lep_rec = ROOT.TLorentzVector()
+
+      p4lep_rec.SetPxPyPzE(Lepton.Px(),Lepton.Py(),Lepton.Pz(),Lepton.Energy());
+
+      #print a2,b
+      if(a2-b > 0 ):
+        root = math.sqrt(a2-b);
+        pz1 = a + root;
+        pz2 = a - root;
+        nNuSol = 2;
+
+        pznu = pz1;
+        branch = 1
+        if abs(pz2)<abs(pz1):
+            pznu = pz2
+            branch = 2
+
+        Enu = math.sqrt(MisET2 + pznu*pznu);
+
+        p4nu_rec.SetPxPyPzE(MET.Px(), MET.Py(), pznu, Enu);
+
+        result.append(p4nu_rec);
+
+      else:
+
+        ptlep = Lepton.Pt()
+        pxlep=Lepton.Px()
+        pylep=Lepton.Py()
+        metpx=MET.Px()
+        metpy=MET.Py()
+
+        EquationA = 1.
+        EquationB = -3.*pylep*mW/(ptlep)
+        EquationC = mW*mW*(2*pylep*pylep)/(ptlep*ptlep)+mW*mW-4*pxlep*pxlep*pxlep*metpx/(ptlep*ptlep)-4*pxlep*pxlep*pylep*metpy/(ptlep*ptlep)
+        EquationD = 4.*pxlep*pxlep*mW*metpy/(ptlep)-pylep*mW*mW*mW/ptlep
+
+        solutions = self.EquationSolve(EquationA,EquationB,EquationC,EquationD)
+
+        solutions2 = self.EquationSolve(EquationA,-EquationB,EquationC,-EquationD);
+
+        deltaMin = 14000*14000
+        zeroValue = -mW*mW/(4*pxlep)
+        minPx=0
+        minPy=0
+
+        for i in range(len(solutions)):
+            if(solutions[i]<0 ): continue
+            p_x = (solutions[i]*solutions[i]-mW*mW)/(4*pxlep)
+            p_y = ( mW*mW*pylep + 2*pxlep*pylep*p_x -mW*ptlep*solutions[i])/(2*pxlep*pxlep)
+            Delta2 = (p_x-metpx)*(p_x-metpx)+(p_y-metpy)*(p_y-metpy)
+
+            if(Delta2< deltaMin and Delta2 > 0):
+                deltaMin = Delta2
+                minPx=p_x
+                minPy=p_y
+                branch = 3
+
+        for i in range(len(solutions2)):
+            if(solutions2[i]<0 ): continue
+            p_x = (solutions2[i]*solutions2[i]-mW*mW)/(4*pxlep)
+            p_y = ( mW*mW*pylep + 2*pxlep*pylep*p_x +mW*ptlep*solutions2[i])/(2*pxlep*pxlep)
+            Delta2 = (p_x-metpx)*(p_x-metpx)+(p_y-metpy)*(p_y-metpy)
+            if(Delta2< deltaMin and Delta2 > 0):
+                deltaMin = Delta2
+                minPx=p_x
+                minPy=p_y
+                branch = 4
+
+        pyZeroValue= ( mW*mW*pxlep + 2*pxlep*pylep*zeroValue)
+        delta2ZeroValue= (zeroValue-metpx)*(zeroValue-metpx) + (pyZeroValue-metpy)*(pyZeroValue-metpy)
+
+        if(deltaMin==14000*14000):
+            if debug:
+                branch = 6
+                return TLorentzVector(0,0,0,0), branch
+            else:
+                return TLorentzVector(0,0,0,0)
+
+        if(delta2ZeroValue < deltaMin):
+            deltaMin = delta2ZeroValue
+            minPx=zeroValue
+            minPy=pyZeroValue
+            branch = 5
+
+        mu_Minimum = (mW*mW)/2 + minPx*pxlep + minPy*pylep
+        a_Minimum  = (mu_Minimum*Lepton.Pz())/(Lepton.Energy()*Lepton.Energy() - Lepton.Pz()*Lepton.Pz())
+        pznu = a_Minimum
+
+        Enu = math.sqrt(minPx*minPx+minPy*minPy + pznu*pznu)
+        p4nu_rec.SetPxPyPzE(minPx, minPy, pznu , Enu)
+        result.append(p4nu_rec)
+
+      if debug:
+          return result[0], branch
+      else:
+          return result[0]
+
     def statusFlags_dict(self, bit):
         Dict={0 : "isPrompt", 1 : "isDecayedLeptonHadron", 2 : "isTauDecayProduct", 3 : "isPromptTauDecayProduct", 4 : "isDirectTauDecayProduct", 5 : "isDirectPromptTauDecayProduct", 6 : "isDirectHadronDecayProduct", 7 : "isHardProcess", 8 : "fromHardProcess", 9 : "isHardProcessTauDecayProduct", 10 : "isDirectHardProcessTauDecayProduct", 11 : "fromHardProcessBeforeFSR", 12 : "isFirstCopy", 13 : "isLastCopy", 14 : "isLastCopyBeforeFSR" }
         return Dict[bit] 
@@ -305,6 +537,8 @@ class VHbbProducer(Module):
         #self.out.fillBranch("MET_Pt",metPt)
         #self.out.fillBranch("MET_Phi",metPhi)
         Vtype = -1
+        V_mt = -99.
+        Top1_mass_fromLepton_regPT_w4MET = -99.
         vLeptons = [] # decay products of V
         vLidx = [-1,-1] # indices in lepton collection of selected leptons
         if len(zMuons) >= 2:
@@ -339,6 +573,7 @@ class VHbbProducer(Module):
                 lep_met_dPhi = deltaPhi(wElectrons[0].phi,metPhi)
             n_addLeptons = (len([x for k,x in enumerate(electrons) if x.pt > 15 and x.eta<2.5 and self.elid(x,"90") and x.pfRelIso03_all < 0.1 and k!=vLidx[0]]) + len([x for i, x in enumerate(muons) if x.pt >15 and x.eta<2.5 and x.pfRelIso04_all < 0.1  and i!=vLidx[0]])) 
             if not (n_addLeptons==0 and lep_met_dPhi>2.):Vtype-1
+            self.out.fillBranch("lepMetDPhi",lep_met_dPhi)            
         elif len(zElectrons) + len(zMuons) > 0:
             Vtype = 5
         else:
@@ -348,29 +583,36 @@ class VHbbProducer(Module):
                 if not (nJetsCloseToMET==0 and n_addLeptons==0): Vtype = -1
                 else: Vtype = 4
         if (Vtype>=0 and Vtype<5):
-             if not self.pass_trigger(event, Vtype):return [0,0,-1]
-        else: return [0,0,-1]
+             if not self.pass_trigger(event, Vtype):return [0,0,-1,vLeptons]
+        else: return [0,0,-1,vLeptons]
         V = ROOT.TLorentzVector()
+        met_4vec = ROOT.TLorentzVector()
+        met_4vec.SetPtEtaPhiM(metPt,0.,metPhi,0.) # only use met vector to derive transverse quantities
         for vLepton in vLeptons:
             vLepton_4vec = ROOT.TLorentzVector()
             vLepton_4vec.SetPtEtaPhiM(vLepton.pt,vLepton.eta,vLepton.phi,vLepton.mass)
+            if Vtype==3 or Vtype==2: Top1_mass_fromLepton_regPT_w4MET = self.get_topMass(jets,vLepton_4vec,met_4vec)
+            else: Top1_mass_fromLepton_regPT_w4MET = -99.
+            cosPhi12 = (vLepton_4vec.Px()*met_4vec.Px() + vLepton_4vec.Py()*met_4vec.Py()) / (vLepton_4vec.Pt() * met_4vec.Pt())
+            V_mt= math.sqrt(2*vLepton_4vec.Pt()*met_4vec.Pt() *max(0.0, (1 - cosPhi12)));
             V = V + vLepton_4vec
-            
-        met_4vec = ROOT.TLorentzVector()
-        met_4vec.SetPtEtaPhiM(metPt,0.,metPhi,0.) # only use met vector to derive transverse quantities
         if Vtype >=2 and Vtype<=4:
             V = V + met_4vec
+        self.out.fillBranch("V_mt",V_mt)
         self.out.fillBranch("V_pt",V.Pt())
         self.out.fillBranch("V_eta",V.Eta())
         self.out.fillBranch("V_phi",V.Phi())
         self.out.fillBranch("V_mass",V.M())
         self.out.fillBranch("Vtype",Vtype)
-        return V,met_4vec,Vtype
+        self.out.fillBranch("Top1_mass_fromLepton_regPT_w4MET",Top1_mass_fromLepton_regPT_w4MET)
+        return V,met_4vec,Vtype,vLeptons
 
-    def select_higgs_jets(self, event,jets,channel):
+    def select_higgs_jets(self, event,jets,channel,vLeptons):
+        sa = Collection(event, "SoftActivityJet")
         resolved= -1
         failed = [-1,-1,-1,-1]
         jetsForHiggs = [x for x in jets if x.lepFilter and x.puId>0 and x.jetId>0 and self.pt(x,self.isMC)>20 and abs(x.eta)<2.5]
+        hjets_btag = []
         if (len(jetsForHiggs) >= 2):
             hJets = sorted(jetsForHiggs, key = lambda jet : self.btag(jet), reverse=True)[0:2]
             hJidx = [jets.index(x) for x in hJets]
@@ -386,10 +628,6 @@ class VHbbProducer(Module):
             hj1.SetPtEtaPhiM(self.pt(jets[hJidx[0]],self.isMC),jets[hJidx[0]].eta,jets[hJidx[0]].phi,jets[hJidx[0]].mass)
             hj2.SetPtEtaPhiM(self.pt(jets[hJidx[1]],self.isMC),jets[hJidx[1]].eta,jets[hJidx[1]].phi,jets[hJidx[1]].mass)
             hbb = hj1 + hj2
-#            self.out.fillBranch("H_pt",hbb.Pt())
-#            self.out.fillBranch("H_phi",hbb.Phi())
-#            self.out.fillBranch("H_eta",hbb.Eta())
-#            self.out.fillBranch("H_mass",hbb.M())
             ## try to recover FSR
             jetsFromFSR = []
             for ijet in xrange(len(jets)):
@@ -406,27 +644,69 @@ class VHbbProducer(Module):
             if not (HFSR.M()>self.cutDict["common"]['mjj_low'] and HFSR.M()<self.cutDict["common"]['mjj_high']):
                 resolved = -1
                 return failed
+            HJ1_HJ2_dPhi = abs(hj1.DeltaPhi(hj2));
+            HJ1_HJ2_dEta = abs(hj1.Eta() - hj2.Eta())
+            HJ1_HJ2_dR   = hj1.DeltaR(hj2)
+
+            resolved = 1
+
+            toVeto = hJets + vLeptons
+            matchedSAJets=self.matchSoftActivity(toVeto,sa)
+            matchedSAJetsPt5=[x for x in matchedSAJets if x.pt>5]
+            softActivityJetNjets5=event.SoftActivityJetNjets5-len(matchedSAJetsPt5)
+
+            addJetspt30eta2p5 = [x for i,x in enumerate(jets) if x.lepFilter and x.puId>0 and x.jetId>0 and self.pt(x,self.isMC)>30 and abs(x.eta)<2.5 and i!=hJidx[0] and i!=hJidx[1]]
+            addJetspt30eta2p4 = [x for i,x in enumerate(jets) if x.lepFilter and x.puId>0 and x.jetId>0 and self.pt(x,self.isMC)>30 and abs(x.eta)<2.4 and i!=hJidx[0] and i!=hJidx[1]]
+            otherJets = [x for i,x in enumerate(jets) if x.lepFilter and ((x.puId>0 and self.pt(x,self.isMC,noReg=True)>50) or x.puId>6) and x.jetId>0 and self.pt(x,self.isMC)>30 and i!=hJidx[0] and i!=hJidx[1]]
+            if (len(otherJets)>0):
+                otherJetsHighestBtag = self.btag(sorted(otherJets, key = lambda x : self.btag(x), reverse=True)[0])
+                otherJetsHighestPt = self.pt(sorted(otherJets, key = lambda x : self.pt(x,self.isMC,noReg=True), reverse=True)[0],self.isMC,noReg=True)
+                met = Object(event, "MET")
+                metPhi = self.met(met,self.isMC)[1]
+                minDphi = abs(deltaPhi((sorted(otherJets, key = lambda x : abs(deltaPhi(x,metPhi)), reverse=False)[0]),metPhi))
+                self.out.fillBranch("otherJetsHighestPt",otherJetsHighestPt)
+                self.out.fillBranch("otherJetsHighestBtag",otherJetsHighestBtag)
+                self.out.fillBranch("minDPhiFromOtherJets",minDphi)
+#                print(otherJetsHighestBtag, otherJetsHighestPt, minDphi)
+#                if (len(otherJets)>1):
+#                    print otherJetsHighestBtag, self.btag(sorted(otherJets, key = lambda x : self.btag(x), reverse=True)[1])#,self.btag(sorted(otherJets, key = lambda x : self.btag(x), reverse=True)[2])
+#                    print otherJetsHighestPt,self.pt(sorted(otherJets, key = lambda x : self.pt(x,self.isMC,noReg=True), reverse=True)[1],self.isMC,noReg=True)#,self.pt(sorted(otherJets, key = lambda x : self.pt(x,self.isMC,noReg=True)[2]),self.isMC,noReg=True)
+##                    print minDphi, sorted(otherJets, key = lambda x : x.deltaPhi(metPhi), reverse=False)[1].deltaPhi(metPhi)#,sorted(otherJets, key = lambda x : x.phi.deltaPhi(metPhi), reverse=False)[2].phi.delta
+            else:
+                self.out.fillBranch("otherJetsHighestPt",-99.)
+                self.out.fillBranch("otherJetsHighestBtag",-99.)
+                self.out.fillBranch("minDPhiFromOtherJets",-99.)
+    
             self.out.fillBranch("H_pt",HFSR.Pt())
             self.out.fillBranch("H_phi",HFSR.Phi())
             self.out.fillBranch("H_eta",HFSR.Eta())
             self.out.fillBranch("H_mass",HFSR.M())
-            resolved = 1
-            addJetspt30eta2p5 = [x for i,x in enumerate(jets) if x.lepFilter and x.puId>0 and x.jetId>0 and self.pt(x,self.isMC)>30 and abs(x.eta)<2.5 and i!=hJidx[0] and i!=hJidx[1]]
-            addJetspt30eta2p4 = [x for i,x in enumerate(jets) if x.lepFilter and x.puId>0 and x.jetId>0 and self.pt(x,self.isMC)>30 and abs(x.eta)<2.4 and i!=hJidx[0] and i!=hJidx[1]]
+            self.out.fillBranch("HJ1_HJ2_dPhi",HJ1_HJ2_dPhi)
+            self.out.fillBranch("HJ1_HJ2_dEta",HJ1_HJ2_dEta)
+            self.out.fillBranch("HJ1_HJ2_dR",HJ1_HJ2_dR)
+            self.out.fillBranch("hJets_leadingPt",hj1.Pt())
+            self.out.fillBranch("hJets_btagWP_0",hjets_btag[0])
+            self.out.fillBranch("hJets_btagWP_1",hjets_btag[1])
+            self.out.fillBranch("hJets_subleadingPt",hj2.Pt())
+            self.out.fillBranch("nAddJets302p4_puid",len(addJetspt30eta2p4))
+            self.out.fillBranch("SA5",softActivityJetNjets5)
             return resolved,HFSR,len(addJetspt30eta2p5),len(addJetspt30eta2p4)
 
         else:
             return failed
-            self.out.fillBranch("H_pt",-1)
-            self.out.fillBranch("H_phi",-1)
-            self.out.fillBranch("H_eta",-1)
-            self.out.fillBranch("H_mass",-1)
-#            self.out.fillBranch("HFSR_pt",-1)
-#            self.out.fillBranch("HFSR_phi",-1)
-#            self.out.fillBranch("HFSR_eta",-1)
-#            self.out.fillBranch("HFSR_mass",-1)
-#            self.out.fillBranch("SA_Ht",-1)
-#            self.out.fillBranch("SA5",-1)
+            self.out.fillBranch("H_pt",-99.)
+            self.out.fillBranch("H_phi",-99.)
+            self.out.fillBranch("H_eta",-99.)
+            self.out.fillBranch("H_mass",-99.)
+            self.out.fillBranch("HJ1_HJ2_dPhi",-99.)
+            self.out.fillBranch("HJ1_HJ2_dEta",-99.)
+            self.out.fillBranch("HJ1_HJ2_dR",-99.)
+            self.out.fillBranch("hJets_leadingPt",-99.)
+            self.out.fillBranch("hJets_subleadingPt",-99.)
+            self.out.fillBranch("hJets_btagWP_0",-99.)
+            self.out.fillBranch("hJets_btagWP_1",-99.)
+            self.out.fillBranch("nAddJets302p4_puid",-99.)
+            self.out.fillBranch("SA5",-99.)
 
     def select_fat_jets(self,fatjets,jets): 
         boosted = -1;BH=0;
@@ -447,10 +727,11 @@ class VHbbProducer(Module):
 
             BH = ROOT.TLorentzVector()
             BH.SetPtEtaPhiM(self.pt(jh[0],self.isMC,True),jh[0].eta,jh[0].phi,self.msoftdrop(jh[0],self.isMC))
-            self.out.fillBranch("BH_pt",BH.Pt())
-            self.out.fillBranch("BH_phi",BH.Phi())
-            self.out.fillBranch("BH_eta",BH.Eta())
-            self.out.fillBranch("BH_mass",BH.M())
+            self.out.fillBranch("FatJetCandidate_pt",BH.Pt())
+            self.out.fillBranch("FatJetCandidate_phi",BH.Phi())
+            self.out.fillBranch("FatJetCandidate_eta",BH.Eta())
+            self.out.fillBranch("FatJetCandidate_mass",BH.M())
+            self.out.fillBranch("FatJetCandidate_deepTagMD_bbvsLight",jh[0].deepTagMD_bbvsLight)
             boosted = 1;
             bJetsOutsideFatJet = []
             for ijet in xrange(len(jets)):
@@ -460,31 +741,14 @@ class VHbbProducer(Module):
                        bJetsOutsideFatJet.append(jet)
             nBJetsOutsideFatJet = len(bJetsOutsideFatJet)
             return boosted,BH,nBJetsOutsideFatJet
-            ## SA leading pt
-#            toVeto = [fatjets[bbvsLight_idx]]
-#            toVeto.extend(vLeptons)
-#            matchedSAJets=self.matchSoftActivity(toVeto,sa,0.8)
-#            matchedSAJetsPt5=[x for x in matchedSAJets if x.pt>5]
-#            softActivityJetHT=event.SoftActivityJetHT-sum([x.pt for x in matchedSAJets])
-#            self.out.fillBranch("SAptfj_HT",softActivityJetHT)
-#            softActivityJetNjets5=event.SoftActivityJetNjets5-len(matchedSAJetsPt5)
-#            self.out.fillBranch("SAptfj5",softActivityJetNjets5)
         else:
             return -1,-1,-1
-            self.out.fillBranch("BH_pt",-99.)
-            self.out.fillBranch("BH_phi",-99.)
-            self.out.fillBranch("BH_eta",-99.)
-            self.out.fillBranch("BH_mass",-99.)
-
-#            self.out.fillBranch("SAptfj_HT",-1)
-#            self.out.fillBranch("SAptfj5",-1)
-#            self.out.fillBranch("SAmfj_HT",-1)
-#            self.out.fillBranch("SAmfj5",-1)
-#            self.out.fillBranch("SAhbbfj_HT",-1)
-#            self.out.fillBranch("SAhbbfj5",-1)
-
+            self.out.fillBranch("FatJetCandidate_pt",-99.)
+            self.out.fillBranch("FatJetCandidate_phi",-99.)
+            self.out.fillBranch("FatJetCandidate_eta",-99.)
+            self.out.fillBranch("FatJetCandidate_mass",-99.)
+            self.out.fillBranch("FatJetCandidate_deepTagMD_bbvsLight",-99.)
     def categorise_event(self, lepton_channel,higgs,V,MET,n_add_jets,resolved,boosted):
-    #def categoriseEvent(self, lepton_channel,higgs,leptons,MET,fatJet,n_add_jets):
         channel=-1;channel_STXS=-1
         V_pt = V.Pt()
         V_mass = V.M()
@@ -536,6 +800,20 @@ class VHbbProducer(Module):
             elif channel==0 or channel==1 and (n_add_jets==0):
               if V_pt<400: channel_STXS = 100+channel*10+5
               else: channel_STXS = 100 + channel*10 + 6
+        if channel>-1 and channel_STXS>-1:
+            self.out.fillBranch("HVdR",HVdR)
+            self.out.fillBranch("HVdEta",HVdEta)
+            self.out.fillBranch("HVdPhi",HVdPhi)
+            self.out.fillBranch("VPtjjRatio",VPtjjRatio)
+            self.out.fillBranch("jjVPtRatio",jjVPtRatio)
+            self.out.fillBranch("MET_Pt",MET_Pt)
+        else:
+            self.out.fillBranch("HVdR",-99.)
+            self.out.fillBranch("HVdEta",-99.)
+            self.out.fillBranch("HVdPhi",-99.)
+            self.out.fillBranch("VPtjjRatio",-99.)
+            self.out.fillBranch("jjVPtRatio",-99.)
+            self.out.fillBranch("MET_Pt",-99.)
         return channel,channel_STXS
 
     def lepton_channel(self,Vtype):
@@ -648,10 +926,10 @@ class VHbbProducer(Module):
         self.out.fillBranch("FatJet_lepFilter",fatjetFilterFlags)
 
 
-        V_4vec,MET,Vtype = self.select_vboson(event,jets)
+        V_4vec,MET,Vtype,vLeptons = self.select_vboson(event,jets)
         if Vtype<0: return False
         lepton_ch = self.lepton_channel(Vtype)
-        resolved, higgs_cand,n_add_jets,n_add_jets_un = self.select_higgs_jets(event,jets,lepton_ch)
+        resolved, higgs_cand,n_add_jets,n_add_jets_un = self.select_higgs_jets(event,jets,lepton_ch,vLeptons)
         if resolved<0: 
             boosted, higgs_cand_boost, n_bjets_outside_fat_jet = self.select_fat_jets(fatjets,jets)
             if boosted<0: return False 
@@ -673,7 +951,7 @@ class VHbbProducer(Module):
 
 vhbb2016 = lambda : VHbbProducer(True,"2016") 
 vhbb2017 = lambda : VHbbProducer(True,"2017") 
-vhbb2018 = lambda : VHbbProducer(True,"2018",True) 
+vhbb2018 = lambda : VHbbProducer(True,"2018",False) 
 vhbb2018_gen = lambda : VHbbProducer(True,"2018",True,False,True) 
 jmeCorrections2018MC = createJMECorrector(True, "2018", "A", "Merged", "AK4PFchs", False,splitJER=False)
 jmeCorrections2018MCAll = createJMECorrector(True, "2018", "A", "All", "AK4PFchs", False,splitJER=True)
