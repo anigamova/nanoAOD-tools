@@ -79,7 +79,8 @@ class Event:
 
     use_helicity = self.useHelicity(helicities)
     reweights = rw.ComputeWeights(parts, pdgs, helicities, status, self.alphas, use_helicity, VERB)
-    return reweights
+    transformed_weights = rw.TransformWeights(reweights)
+    return reweights, transformed_weights
 
   def __str__(self):
     strings = []
