@@ -1,9 +1,13 @@
 # this is a comment
 drop *
+keep event
 keep Reweights*
 keep Reco*
+keep *H_*
 keep H_mass*
-keep V_pt*
+keep V_*
+keep HJ1*
+keep Fat*
 keep HTXS*
 keep Gen*
 keep genWeight

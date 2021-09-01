@@ -111,9 +111,6 @@ class StandaloneReweight:
         print '>> Accepted PDG lists:'
         for pdgs in self.all_pdgs:
             print '   - %s' % pdgs
-        # print self.hel_dict
-        # print self.all_pdgs
-        # print self.sorted_pdgs
 
     def checkNLO(self):
         if os.path.isdir(os.path.join(self.target_dir, 'rwgt', "rw_me_second", 'SubProcesses')): #if nlo
@@ -129,7 +126,7 @@ class StandaloneReweight:
         Ninits = 2. If not assume decay process -> Ninits = 1.
         Guess may be wrong so cross checks are made later on."""
         pdglist = self.all_pdgs[0]
-        if (abs(pdglist[0])<9 or pdglist[0]==21) and (abs(pdglist[0])<9 or pdglist[0]==21):
+        if (abs(pdglist[0])<9 or pdglist[0]==21) and (abs(pdglist[1])<9 or pdglist[1]==21):
             self.nInits = 2
         else:
             self.nInits = 1
@@ -365,7 +362,6 @@ class StandaloneReweight:
             final_parts.append(parts[ip])
             final_pdgs.append(pdgs[ip])
             final_hels.append(hels[ip])
-        # print final_pdgs
 
         com_final_parts = []
         if nInits == 1:
@@ -374,7 +370,6 @@ class StandaloneReweight:
             pboost = [final_parts[0][i] + final_parts[1][i] for i in range(4)]
         else:
             raise Exception("More than two initial particles.")
-
         for part in final_parts:
             if (pboost[1]!=0) or (pboost[2]!=0): #if non-zero pt boost do boost in all directions
                 com_final_parts.append(self.allboost(part, pboost))

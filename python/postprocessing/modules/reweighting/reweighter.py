@@ -25,6 +25,9 @@ class ReweighterTemplate(Module):
     self.out = wrappedOutputTree
     self.out.branch("Reweights", "F", self.rw_module.N)
     self.out.branch("Reweights_transformed", "F", self.rw_module.N)
+    self.out.branch("Reweights_decay", "F", self.rw_module.N)
+    self.out.branch("Reweights_decay_transformed", "F", self.rw_module.N)
+
 
   def endFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
     pass
@@ -190,6 +193,24 @@ class GenReweighter(ReweighterTemplate):
       return False
 
 class HiggsDecayReweighter(GenReweighter):
+  def analyze(self, event):
+    """process event, return True (go to next module) or False (fail, go to next event)"""
+    if self.acceptEvent(event):
+      rw_event = definitions.Event(0, event.genWeight, self.getParticles(event), self.getAlphas(event))
+      reweights = rw_event.getReweights(self.rw_module)[0]
+      transformed_reweights = rw_event.getReweights(self.rw_module)[1]
+      if isinstance(reweights, list):
+          self.out.fillBranch("Reweights_decay", [i * event.genWeight for i in reweights])
+          self.out.fillBranch("Reweights_decay_transformed", [i * event.genWeight for i in transformed_reweights])
+      else: return False
+      if self.verb:
+        print(rw_event)
+        print(reweights)
+        print(transformed_reweights)
+        print(" ")
+      return True
+    else:
+      return False
   def isDaughterOfHiggs(self, part, event, index):
     """Includes non-direct daughters"""
     parts = Collection(event, self.partsName)
@@ -288,9 +309,7 @@ class VHbbReweighter(GenReweighter):
     if self.isHardProcess(part):
       if self.isIncomingParton(part, event, index):
         return True
-      elif self.isDirectDaughterOfHiggs(part, event, index) or part.pdgId == 23:# or ((abs(part.pdgId) <=9 or part.pdgId ==21) and index>4):
-      #elif self.isDirectDaughterOfHiggs(part, event, index) or part.pdgId == 23 or ((abs(part.pdgId) <=9 or part.pdgId ==21) and index>4):
-      #elif self.isDirectDaughterOfHiggs(part, event, index) or part.pdgId == 23 or ((abs(part.pdgId) <=9 or part.pdgId ==21) and self.isIncomingParton(part, event, index)==0):
+      elif self.isDirectDaughterOfHiggs(part, event, index) or part.pdgId == 23 or  part.pdgId == 24:
         return False
       else:
         return True

@@ -78,10 +78,10 @@ class VHbbProducer(Module):
         if( Delta<=0):
           rho = math.sqrt(-(q*q*q))
 
-          theta = acos(r/rho)
+          theta = math.acos(r/rho)
 
-          s = complex(math.sqrt(-q)*cos(theta/3.0),math.sqrt(-q)*sin(theta/3.0))
-          t = complex(math.sqrt(-q)*cos(-theta/3.0),math.sqrt(-q)*sin(-theta/3.0))
+          s = complex(math.sqrt(-q)*math.cos(theta/3.0),math.sqrt(-q)*math.sin(theta/3.0))
+          t = complex(math.sqrt(-q)*math.cos(-theta/3.0),math.sqrt(-q)*math.sin(-theta/3.0))
 
         if(Delta>0):
           #print r, math.sqrt(Delta)
