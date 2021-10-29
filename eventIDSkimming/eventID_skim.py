@@ -88,6 +88,8 @@ def addKeep(txt, collection):
 def makeInputOutputTxt(options):
   baseCollections = ["event", "category", "LHEPart", "GenPart", "Generator",
                      "genWeight", "LHE_AlphaS", "HTXS_stage1_2_cat_pTjet30GeV"]
+  if options.inclusiveSample:
+    baseCollections.remove("category")
   txt = "drop *"
   for collection in baseCollections:
     txt = addKeep(txt, collection)
@@ -107,7 +109,10 @@ def run(df, files, options, dataset):
 
   print(">> Starting skim")
   postfix = "_%s_temp"%options.output_root.split("/")[-1].split(".")[0]
-  p = PostProcessor(".", files, branchsel="%s/keep_and_drop.txt"%os.environ.get("TMPDIR"), modules=[ExampleAnalysis(df, options.keepNoTag, options.NoTagIndex, options.extraBranches)], postfix=postfix, prefetch=True, maxEntries=maxEntries)
+  if not options.inclusiveSample:
+    p = PostProcessor(".", files, branchsel="%s/keep_and_drop.txt"%os.environ.get("TMPDIR"), modules=[ExampleAnalysis(df, options.keepNoTag, options.NoTagIndex, options.extraBranches)], postfix=postfix, prefetch=True, maxEntries=maxEntries)
+  else:
+    p =  PostProcessor(".", files, branchsel="%s/keep_and_drop.txt"%os.environ.get("TMPDIR"), modules=[], postfix=postfix, prefetch=True, maxEntries=maxEntries)
   p.run()
   print(">> Skim complete")
 
@@ -193,6 +198,8 @@ if __name__=="__main__":
   parser.add_option('--NoTagIndex', dest='NoTagIndex', default=0,
                     help="The number/index that corresponds to the NoTag category. Default is 0.")
   parser.add_option("--job-json", dest="job_json", default=None)
+  parser.add_option("--inclusiveSample", dest="inclusiveSample", default=False, action="store_true",
+                    help="Do not filter according to eventID, just combine files and keep relevant branches")
 
   (options, args) = parser.parse_args()
   

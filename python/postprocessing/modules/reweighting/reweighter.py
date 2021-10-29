@@ -274,9 +274,29 @@ class ttHReweighter(GenReweighter):
       else:
         return False
 
+class H4LProdReweighter(GenReweighter):
+  def isDaughterOfHiggs(self, part, event, index):
+    """Includes non-direct daughters"""
+    parts = Collection(event, self.partsName)
+    mother_index = part.genPartIdxMother
+    if mother_index >= 0:
+      mother = parts[mother_index]
+      if mother.pdgId == 25:
+        return True
+      else:
+        return self.isDaughterOfHiggs(mother, event, mother_index)
+    else:
+      return False
+
+  def filterPart(self, part, event, index):
+    isHard = (self.isHardProcess(part) or index==2) 
+    isDaughter = self.isDaughterOfHiggs(part, event, index)
+    isIntermediateV = (abs(part.pdgId) == 24) or (part.pdgId == 23)
+    return (isHard and not isDaughter) and not isIntermediateV
+    
+
 """
 # define modules using the syntax 'name = lambda : constructor' to avoid having them loaded when not needed
 LHEReweighterConstr = lambda: LHEReweighter(rw_module_path)
 GenReweighterConstr = lambda: GenReweighter(rw_module_path)
 """
-

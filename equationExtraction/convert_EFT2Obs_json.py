@@ -1,6 +1,7 @@
 import json
 from collections import OrderedDict
 import sys
+import warnings
 
 #helper function for reading json and converting keys to integers
 def keysToInt(x):
@@ -15,6 +16,11 @@ def jsonToNewDict(eft2obs_json, key):
   tags = [edges[0] for edges in eft2obs_json['edges']]
 
   for i, tag in enumerate(tags):
+    if key is not None:
+      if tag not in key.keys(): #if this bin shouldn't exist
+        warnings.warn("Found a bin in EFT2Obs json that does not exist in the key. Expected (and probably isn't a problem) if >1 STXS stage 0 processes in a dataset, e.g. VH")
+        continue
+
     bin_dict = OrderedDict()
     for param_info in eft2obs_json['bins'][i]:
       #linear terms
@@ -30,11 +36,13 @@ def jsonToNewDict(eft2obs_json, key):
         bin_dict["B_%s_%s"%(param_info[2], param_info[3])] = param_info[0]
         bin_dict["u_B_%s_%s"%(param_info[2], param_info[3])] = param_info[1]
     
+    #if key available use it
     if key is not None:
       name = key[tag]
     else:
       name = tag
     new_json_dict[name] = bin_dict
+
   return new_json_dict
 
 def cleanUp(new_json_dict, options):
@@ -51,6 +59,20 @@ def cleanUp(new_json_dict, options):
         del new_json_dict[tag][param]
         del new_json_dict[tag]["u_"+param]
   return new_json_dict
+
+
+"""
+def cleanUp(new_json_dict, options):
+  for tag in new_json_dict.keys():
+    params = new_json_dict[tag].keys()
+    params = filter(lambda x: x[0] != "u", params)
+    for param in params:
+      param_value = new_json_dict[tag][param]
+      if abs(param_value) < 0.001:
+        del new_json_dict[tag][param]
+        del new_json_dict[tag]["u_"+param]
+  return new_json_dict
+"""
 
 
 from optparse import OptionParser

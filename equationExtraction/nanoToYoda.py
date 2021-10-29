@@ -102,7 +102,7 @@ else:
         new_key = OrderedDict()
         for t1 in t1_key.keys():
           for t2 in t2_key.keys():
-            new_name = t1_key[t1] + "_" + t2_key[t2]
+            new_name = t1_key[t1] + "__" + t2_key[t2]
             new_key[(t1*n_tags2) + t2] = new_name
 
         print("Writing new key")
@@ -116,8 +116,12 @@ n_rw = len(reweights[0])
 n_pars = int((-3 + np.sqrt(9+8*(n_rw-1)))/2)
 
 hists = []
+max_i = max(tag)
+min_i = min(tag)
+#min_i = 1
+#max_i = 79
 for i in range(n_rw):
-  hists.append(yoda.Histo1D(max(tag)-min(tag)+1, min(tag), max(tag)+1, "/MyHist[rw%.4i]"%i))
+  hists.append(yoda.Histo1D(max_i-min_i+1, min_i, max_i+1, "/MyHist[rw%.4i]"%i))
 
 for i in range(n_events):
   if (i%10000 == 0):
