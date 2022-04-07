@@ -4,6 +4,7 @@ from collections import OrderedDict
 from optparse import OptionParser
 
 parser = OptionParser(usage="%prog [options] jobs.json AFS_dir")
+parser.add_option("--JobFlavour", dest="JobFlavour", default="espresso", help="Job flavour for condor submission")
 (options, args) = parser.parse_args()
 
 job_json = args[0]
@@ -30,6 +31,8 @@ sub += "arguments = %s $(outDir) $(in_file) $(rw_path) $(start) $(entries) $(met
 sub += "output = %s/output/rw.$(ClusterId).$(ProcId).out \n"%afs_dir
 sub += "error = %s/error/rw.$(ClusterId).$(ProcId).err \n"%afs_dir
 sub += "log = %s/log/rw.$(ClusterId).log \n\n"%afs_dir
+
+sub += '+JobFlavour = "%s"\n'%(options.JobFlavour)
 
 for job in jobs:
   sub += "outDir = %s \n"%job['outdir']

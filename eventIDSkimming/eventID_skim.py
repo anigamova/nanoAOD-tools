@@ -165,6 +165,8 @@ def addJobDetails(options, dataset, df_csv):
     options.test = None
   if not options.keepNoTag:
     options.keepNoTag = None
+  if not options.inclusiveSample:
+    options.inclusiveSample = None
 
   new_job = OrderedDict()
   new_job["dataset"] = dataset
@@ -175,6 +177,7 @@ def addJobDetails(options, dataset, df_csv):
   new_job["test"] = str(options.test)
   new_job["keepNoTag"] = str(options.keepNoTag)
   new_job["NoTagIndex"] = options.NoTagIndex
+  new_job["inclusiveSample"] = options.inclusiveSample
   jobs.append(new_job)
 
   with open(options.job_json, "w") as f:
@@ -185,7 +188,7 @@ if __name__=="__main__":
   parser = OptionParser(usage="%prog dataset df_csv")
   parser.add_option("--test", dest="test", default=False, action="store_true",
                     help="Skim only one file from the dataset, upto 10,000 events")
-  parser.add_option('--extraBranches', dest='extraBranches', default=None, 
+  parser.add_option('--extraBranches', dest='extraBranches', default="auto", 
                     help="Comma separated list of branches/columns from the csv file that should be added to the output tree. auto = add all branches from csv file.")
   parser.add_option('--extraCollections', dest='extraCollections', default=None,
                     help="Comma separated list of variables/collections from the nanoAOD to include. All collections needed for reweighting are included by default, this option is for additional collections.")

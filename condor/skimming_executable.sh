@@ -12,16 +12,17 @@ extraCollections=$6
 doTest=$7
 keepNoTag=$8
 NoTagIndex=$9
+inclusiveSample=${10}
 
-if [[ -n $10 ]]; then
-    export X509_USER_PROXY=${10}
+if [[ -n ${11} ]]; then
+    export X509_USER_PROXY=${11}
     voms-proxy-info -all
-    voms-proxy-info -all -file ${10}
+    voms-proxy-info -all -file ${11}
 fi
 
-if [[ -n ${11} && -n ${12} ]]; then
-    ClusterId=${11}
-    ProcId=${12} 
+if [[ -n ${12} && -n ${13} ]]; then
+    ClusterId=${12}
+    ProcId=${13} 
 else
     ClusterId=local
     ProcId=run
@@ -48,6 +49,9 @@ if [[ "$keepNoTag" != "None" ]]; then
 fi
 if [[ "$NoTagIndex" != "None" ]]; then
   options="${options} --NoTagIndex ${NoTagIndex}"
+fi
+if [[ "$inclusiveSample" != "None" ]]; then
+  options="${options} --inclusiveSample $inclusiveSample}"
 fi
 
 echo ${options}
