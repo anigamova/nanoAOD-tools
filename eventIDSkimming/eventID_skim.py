@@ -108,7 +108,10 @@ def run(df, files, options, dataset):
     maxEntries = None
 
   print(">> Starting skim")
-  postfix = "_%s_temp"%options.output_root.split("/")[-1].split(".")[0]
+  #postfix = "_%s_temp"%options.output_root.split("/")[-1].split(".")[0]
+  postfix = "_%s_temp"%options.output_root.replace("/", "_").split(".")[0]
+  maxEntries=100
+  files = files[:3]
   if not options.inclusiveSample:
     p = PostProcessor(".", files, branchsel="%s/keep_and_drop.txt"%os.environ.get("TMPDIR"), modules=[ExampleAnalysis(df, options.keepNoTag, options.NoTagIndex, options.extraBranches)], postfix=postfix, prefetch=True, maxEntries=maxEntries)
   else:

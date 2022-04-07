@@ -20,6 +20,8 @@ Deriving scaling equations for particular STXS bins can be done by using the STX
 
 You may want to derive equations for particular analysis categories. This can be more tricky since the analysis can take a long time to write in the NanoAOD framework. An alternative to writing an analysis is the event ID skimming [approach](event_id_skimming.md) that would be performed between steps 3 and 4 in the standalone reweighting workflow.
 
+NOTE: the functionality of the [nanoToYoda.py](../equationExtraction/nanoToYoda.py), [get_scaling.py](../equationExtraction/get_scaling.py) and [convert_EFT2Obs_json.py](../equationExtraction/convert_EFT2Obs_json.py) are now combined into one script called [nanoToJson.py](../equationExtraction/nanoToJson.py). The old scripts are still in the repository and the original tutorial is kept since the explanations are still relevant. I recommend reading Example 1-3 and then the last section which is specific to[nanoToYoda.py](../equationExtraction/nanoToYoda.py).
+
 ## Example 1: STXS equations for the GGH process
 
 Follow the [walkthrough tutorial](walkthrough.md) which will take you through steps 1-4 in the standalone workflow described above.
@@ -69,3 +71,28 @@ python equationExtraction/convert_EFT2Obs_json.py MyHist.json MyHist_converted.j
   --key key1_key2.json
 ```
 
+## nanoToJson
+
+The [nanoToYoda.py](../equationExtraction/nanoToYoda.py) script uses the same arguments used in the scripts described in Examples 1-3. For example, to create STXS stage 1.2 equations for the ggH example you could simply do:
+```
+python equationExtraction/nanoToJson.py rw_module/config.json ggH_reweighted_nanoAOD.root 
+```
+This will create a json file `ggH_reweighted_nanoAOD.json` in your working directory. The output directory can be specified with `--outputDir`.
+
+You could do the process x category equations with:
+```
+python equationExtraction/nanoToJson.py rw_module/config.json ggH_reweighted_nanoAOD.root
+  --tag-branch HTXS_stage1_2_cat_pTjet30GeV --tag-branch2 category \ 
+  --keys key1.json,key2.json --outputDir equations
+```
+
+There are a few additional features with [nanoToYoda.py](../equationExtraction/nanoToYoda.py) as well. 
+1. You can feed in multiple root files to be converted (equivalent to running the script separately on every file)
+```
+python equationExtraction/nanoToJson.py rw_module/config.json ggH_reweighted_nanoAOD.root VH_reweighted_nanoAOD.root ...
+```
+2. It will create uncertainties for each term using the bootstrap method. You can use the `--nBootstrap' option to specify how many resamples to use, the default is 5.
+3. You can use the `--stage0` option to create an STXS stage 0 equation
+```
+python equationExtraction/nanoToJson.py rw_module/config.json ggH_reweighted_nanoAOD.root --key equationExtraction/tagKeys/HTXS_stage1_2_cat_pTjet30GeV.json  --stage0 GG2H
+```
