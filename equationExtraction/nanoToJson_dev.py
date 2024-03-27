@@ -44,16 +44,21 @@ def getCrossTerm_from_Trweights(rw,  ic, x):
   mu = rw[:,ic].sum() / (sm)#*x[0]*x[1])
   return mu
 
+def getTerm_from_trans_1D_weights(rw):
+  """
+  Working with 2D arrays, [0] - sm weights, [1] - array with transformed weights with an index corresponding the current term, the wilson coeff. values are already taken into account
+  """
+  sm = rw[:,0].sum()
+  mu = rw[:,1].sum() / (sm)
+  return mu
 
 
-def fill_term(val, ind, unc, n, rw, def_val):
+def fill_term(val, unc, n, rw):
   term = {}
   term["val"] = val
-  term["ind"] = ind
   term["unc"] = unc
   term["N_Events"] = n
   term["rws"] = rw #.tolist()
-  term["def_val"] = def_val #.tolist()
   return term
 
 
@@ -96,8 +101,6 @@ def vhbb_cond(key):
 def define_cat_dnn_bin(dnn_vals, category, key, options):
   with open(options.obs_binning, "r") as f:
     binning_json = json.load(f)
-    #print(category)
-    #vhbb_debug_cond = "_9_" in key[x] and ("Wmn" in key[x] or "Wen" in key[x])
     bins = np.array([binning_json[key[x]] if not vhbb_cond(key[x]) else binning_json[key[x].replace("_9_","_5_")] for x in category ])
     binind = np.array([ (bisect.bisect_left(bins[i],x)-1) for i,x in enumerate(dnn_vals)])
     return binind
@@ -120,7 +123,7 @@ def flatten_arrays(first, second, key=None, key2=None):
 
 
 def cat_ind(options,f):
-  year = '2018'#TODO make configurable
+  year = options.year #TODO make configurable
   dictionary = {
     'htt':{
       'cats' : [200,201,202,203,100,101,102,103,104,105,106,107,108,109,110],
@@ -245,7 +248,13 @@ def readNanoFile(nano_file, options, key, key2, key3):
 
 def deriveEqns_alllevels(params, def_val, reweights,tag1,tag2,tag3,key1,key2,key3,options):
   new_eqn = OrderedDict()
+  if options.filter_params != "":
+    param_list = options.filter_params.split(",")
   for j in range(len(params)):
+    if options.filter_params:
+        if params[j] not in param_list :
+            print("skipping ", params[j], "; with ind", j)
+            continue;
     for tag_level in tag1,tag2,tag3:
       for k in np.unique(tag_level):
         if k in key3.keys():
@@ -256,20 +265,26 @@ def deriveEqns_alllevels(params, def_val, reweights,tag1,tag2,tag3,key1,key2,key
           key = key1[k]
         else: print("error")
         rw = reweights[tag_level==k]
+        #n_events = len(rw)
         n_events = len(rw)
         #print("key:", key, "; nevents=", n_events)
         #if key=="QQ2HLNU_FWDH__vhbb_Wmn_24_13TeV2018": print("QQ2HLNU_FWDH__vhbb_Wmn_24_13TeV2018 nweights = ", n_events)#debug
         resamples = np.random.randint(0, n_events, size=(options.n_bootstrap,n_events))
-
-        A = getTerms_from_Trweights(rw, 2*j+1, def_val[j])
-        B = getTerms_from_Trweights(rw, 2*j+2, def_val[j])
-        A_values = [getTerms_from_Trweights(rw[s], 2*j+1, def_val[j]) for s in resamples]
-        B_values = [getTerms_from_Trweights(rw[s], 2*j+2, def_val[j]) for s in resamples]
+        rws_lin = np.dstack((rw[:,0], rw[:,2*j+1]))[0]#, )axis = 1)
+        rws_quad = np.dstack((rw[:,0], rw[:,2*j+2]))[0]#, )axis = 1)
+        A = getTerm_from_trans_1D_weights(rws_lin)#, def_val[j])
+        B = getTerm_from_trans_1D_weights(rws_quad)#, def_val[j])
+        A_values = [getTerm_from_trans_1D_weights(rws_lin[s]) for s in resamples]
+        B_values = [getTerm_from_trans_1D_weights(rws_quad[s]) for s in resamples]
         
         term_lin = {};term_quadr = {}
-        
-        term_lin = fill_term(float(A),2*j+1,float(np.std(A_values)),n_events,rw,[def_val[j]])
-        term_quadr = fill_term(float(B),2*j+2,float(np.std(B_values)),n_events,rw,[def_val[j]])
+        if (n_events>options.nevents_threshold):
+            term_lin = fill_term(float(A), float(np.std(A_values)), n_events, rws_lin)
+            term_quadr = fill_term(float(B), float(np.std(B_values)), n_events, rws_quad)
+        else: 
+            term_lin = fill_term(float(A), 1.5*abs(float(A)), n_events, rws_lin)
+            term_quadr = fill_term(float(B), 1.5*abs(float(B)), n_events, rws_quad)
+
         
         if not "A_%s"%params[j] in new_eqn.keys(): new_eqn["A_%s"%params[j]] = {key:term_lin}
         else: new_eqn["A_%s"%params[j]].update({key:term_lin})
@@ -278,13 +293,17 @@ def deriveEqns_alllevels(params, def_val, reweights,tag1,tag2,tag3,key1,key2,key
         
   ic = 0
   for j in range(len(params)):
+    if options.filter_params:
+      if params[j] not in param_list :continue;
     for k in range(j+1, len(params)):
+      if options.filter_params:
+        if params[k] not in param_list :continue;
       for tag_level in tag1,tag2,tag3:
         for tag in np.unique(tag_level):
           rw = reweights[tag_level==tag]
           n_events = len(rw)
           resamples = np.random.randint(0, n_events, size=(options.n_bootstrap,n_events))
-
+          rws_cross =  np.dstack((rw[:,0], rw[:,2*len(params)+ 1 + ic]))[0]
           if tag in key3.keys():
             key = key3[tag]
           elif tag in key2.keys():
@@ -293,13 +312,12 @@ def deriveEqns_alllevels(params, def_val, reweights,tag1,tag2,tag3,key1,key2,key
             key = key1[tag]
           else: print("error")
 
-          #print("key:", key, "; nevents=", n_events)
-          #if key=="QQ2HLNU_FWDH__vhbb_Wmn_24_13TeV2018": print("QQ2HLNU_FWDH__vhbb_Wmn_24_13TeV2018 nweights = ", n_events)#debug
-
-          B = getCrossTerm_from_Trweights(rw, 2*len(params)+ 1 + ic,[def_val[j],def_val[k]])
-          B_values = [getCrossTerm_from_Trweights(rw[s], 2*len(params)+ 1 + ic, [def_val[j],def_val[k]]) for s in resamples]
-
-          term = fill_term(float(B),2*len(params)+ 1 + ic,float(np.std(B_values)),n_events,rw,[def_val[j],def_val[k]])
+          B = getTerm_from_trans_1D_weights(rws_cross)#, [def_val[j],def_val[k]])
+          B_values = [getTerm_from_trans_1D_weights(rws_cross[s]) for s in resamples]
+          if (n_events>options.nevents_threshold):
+              term = fill_term(float(B), float(np.std(B_values)), n_events, rws_cross)
+          else:
+              term = fill_term(float(B), abs(float(B)), n_events, rws_cross)
           if "B_%s_%s"%(params[j], params[k]) in new_eqn.keys():
              new_eqn["B_%s_%s"%(params[j], params[k])].update({key:term})
           else: new_eqn["B_%s_%s"%(params[j], params[k])] = {key:term}
@@ -310,7 +328,8 @@ def deriveEqns_alllevels(params, def_val, reweights,tag1,tag2,tag3,key1,key2,key
 def make_stxs_cat_bin_dict(key1,key2,key3,eqns):
 #  print
   term = eqns[eqns.keys()[0]]
-  stxs = [i for i in key1.values() if 'QQ2HLNU' in i ]
+  stxs = [i for i in key1.values()]
+  #stxs = [i for i in key1.values() if 'QQ2HLNU' in i ]
   #stxs = [i for i in key1.values() if "QQ2HLL" in i or 'QQ2HLNU' in i ]
   stxs_cat = key2.values()
   stxs_cat_bin = key3.values()
@@ -363,12 +382,12 @@ def check_and_merge_eqns(eqns, tags):
           if k+1>len(bins)-1:break;
           this = term[bins[k]]['val']
           this_unc = term[bins[k]]['unc']
-          param_ind = term[bins[k]]['ind']  
-          param_val = term[bins[k]]['def_val']  
+          #param_ind = term[bins[k]]['ind']  
+          #param_val = term[bins[k]]['def_val']  
           next = term[bins[k+1]]['val']
           next_unc = term[bins[k+1]]['unc']
           total_unc = math.sqrt(this_unc**2 + next_unc**2)
-          if abs(this-next)>total_unc: 
+          if abs(this-next) > total_unc: 
             merged_prev = False 
             if abs(this - cat_val)>this_unc:#check if compatible with cat term from cat within unc  
               found_different_term = True;
@@ -381,19 +400,15 @@ def check_and_merge_eqns(eqns, tags):
             rws_new = np.vstack((rw1, rw2))
             n_events = len(rws_new)
             resamples = np.random.randint(0, n_events, size = (options.n_bootstrap,n_events))
-            if len(param_val)==1:
-              A = getTerms_from_Trweights(rws_new, param_ind, param_val[0])
-              A_values = [getTerms_from_Trweights(rws_new[s], param_ind, param_val[0]) for s in resamples]
-            else: 
-              A = getCrossTerm_from_Trweights(rws_new, param_ind, param_val)
-              A_values = [getCrossTerm_from_Trweights(rws_new[s], param_ind, param_val) for s in resamples]
+            A = getTerm_from_trans_1D_weights(rws_new)#, param_ind, param_val[0])
+            A_values = [getTerm_from_trans_1D_weights(rws_new[s]) for s in resamples]
 
             del eqns_copy[param][bins[k]]
             del eqns_copy[param][bins[k+1]]
 
-            if abs(A - cat_val)>this_unc:#check if compatible with cat term from cat within unc  
+            if abs(A - cat_val) > this_unc:#check if compatible with cat term from cat within unc  
               found_different_term = True;
-              eqns_copy[param][bin_new] = fill_term(float(A),param_ind,float(np.std(A_values)),n_events,rws_new,param_val)# TODO (not sure)   
+              eqns_copy[param][bin_new] = fill_term(float(A),float(np.std(A_values)),n_events,rws_new)# TODO (not sure)   
               bins.insert(k+1,bin_new)
               bins.pop(k+2)
 
@@ -442,7 +457,7 @@ def reshape_eqns_dict_forIntModel(eqns, tag_dict, options, pars, bin_dict):
             else: 
               tag = define_tag(eqns[term] ,key1, key2, b, bins_from_datacards) #TODO
               s = eqns[term][tag]["val"]
-            if s < options.absolute_threshold: s = 0
+            if abs(s) < options.absolute_threshold: s = 0
             scaling.append(s)
         bin_scaling.append(scaling)             
       if (len(bin_scaling)) != (len(bins_from_datacards)-1):
@@ -522,6 +537,7 @@ def getOptions():
   parser.add_option("--filter-params", dest="filter_params", default="")
   parser.add_option("--analysis", dest="analysis", default="htt")
   parser.add_option("--final-state", dest="final_state", default="htt")
+  parser.add_option("--year", dest="year", default="2018")
 
   parser.add_option("--nBootstrap", dest="n_bootstrap", type="int", default=5, 
                     help="The number of resamples used in the boostrapping")
@@ -540,6 +556,19 @@ def main(EFT2Obs_config, nano_files, options):
   def_val, params = processConfig(EFT2Obs_config)
   key1, key2, key3 = getKeys(options)
 
+  print("unfiltered:", params)
+  params_filtered = []
+  if options.filter_params != "":
+    param_list = options.filter_params.split(",")
+    for j in range(len(params)):
+      if options.filter_params:
+          
+          if params[j] in param_list : 
+            print(params[j], j, 2*j+1,2*j+2)
+            params_filtered.append(params[j])
+  else: params_filtered = params
+  print("filtered:", params_filtered)
+
   for nano_file in nano_files:
     nano_name = nano_file.split("/")[-1].split(".")[-2]
     json_path = os.path.join(options.outputDir, nano_name+".json")
@@ -550,15 +579,21 @@ def main(EFT2Obs_config, nano_files, options):
     reweights, tag_branch_lvl1, key_lvl1, tag_branch_lvl2, key_lvl2, tag_branch_lvl3, key_lvl3 = readNanoFile(nano_file, options, key1, key2, key3)
     #print("key2's",key_lvl2)
     print(">> Finished reading")
+
+    print(">> Deriving equations")
     eqns = deriveEqns_alllevels(params, def_val, reweights, tag_branch_lvl1, tag_branch_lvl2, tag_branch_lvl3, key_lvl1, key_lvl2, key_lvl3, options)
+
+
+    print(">> Derived equations")
     #print("raw eqns: ",eqns)
     stxs_cat_bin_dict = make_stxs_cat_bin_dict(key_lvl1, key_lvl2, key_lvl3, eqns)
-    #print(stxs_cat_bin_dict)
+    print(">> Started merging")
     merged = check_and_merge_eqns(eqns, stxs_cat_bin_dict)
+    print(">> Done merging")
     
     with open(json_path.replace('.json', "_merged.json"), "w") as f:
       json.dump(merged, f, indent = 4)
-    reshaped = reshape_eqns_dict_forIntModel(merged, stxs_cat_bin_dict, options, params, binning_json)  
+    reshaped = reshape_eqns_dict_forIntModel(merged, stxs_cat_bin_dict, options, params_filtered, binning_json)  
     with open(json_path.replace('.json', "_reshaped.json"), "w") as f:
       json.dump(reshaped, f, indent = 4)
 
